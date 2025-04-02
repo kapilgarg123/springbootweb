@@ -2,6 +2,7 @@ package com.coding.springbootweb.springbootweb.services;
 
 import com.coding.springbootweb.springbootweb.dto.EmployeeDTO;
 import com.coding.springbootweb.springbootweb.entities.EmployeeEntity;
+import com.coding.springbootweb.springbootweb.exceptions.ResourceNotFoundException;
 import com.coding.springbootweb.springbootweb.repositories.EmployeeRepository;
 import org.modelmapper.ModelMapper;
 import org.springframework.data.util.ReflectionUtils;
@@ -43,26 +44,26 @@ public class EmployeeService {
     }
 
     public EmployeeDTO updateEmployeeById(Long employeeId, EmployeeDTO employeeDTO) {
+        isExistsByEmployeeId(employeeId);
         EmployeeEntity employeeEntity = modelMapper.map(employeeDTO, EmployeeEntity.class);
         employeeEntity.setId(employeeId);
         EmployeeEntity savedEmployeeEntity = employeeRepository.save(employeeEntity);
         return modelMapper.map(savedEmployeeEntity, EmployeeDTO.class);
     }
 
-    public boolean isExistsByEmployeeId(Long employeeId) {
-        return employeeRepository.existsById(employeeId);
+    public void isExistsByEmployeeId(Long employeeId) {
+        boolean exists = employeeRepository.existsById(employeeId);
+        if (!exists) throw new ResourceNotFoundException("Employee not found with id : " + employeeId);
     }
 
     public boolean deleteEmployeeById(Long employeeId) {
-        boolean exists = isExistsByEmployeeId(employeeId);
-        if (!exists) return false;
+        isExistsByEmployeeId(employeeId);
         employeeRepository.deleteById(employeeId);
         return true;
     }
 
     public EmployeeDTO updatePartialEmployeeById(Long employeeId, Map<String, Object> updates) {
-        boolean exists = isExistsByEmployeeId(employeeId);
-        if (!exists) return null;
+        isExistsByEmployeeId(employeeId);
         EmployeeEntity employeeEntity = employeeRepository.findById(employeeId).get();
         updates.forEach((field, value) -> {
             Field fieldToBeUpdated = ReflectionUtils.findRequiredField(EmployeeEntity.class, field);
